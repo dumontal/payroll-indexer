@@ -1,6 +1,6 @@
 package main
 
-import "fmt"
+import "log"
 
 const (
 	esURL   string = "http://127.0.0.1:9200"
@@ -8,25 +8,34 @@ const (
 
 	sqsURL    string = "https://sqs.eu-west-1.amazonaws.com/560569522348/payrolls"
 	awsRegion string = "eu-west-1"
+
+	nMessages int = 1000
 )
 
 func main() {
 	sqsClient := NewSQSClient(sqsURL, awsRegion)
-	messages, err := sqsClient.Read()
-	if err != nil {
-		fmt.Println("Error", err)
-		return
-	}
-
-	if len(messages) == 0 {
-		fmt.Println("Received no messages")
-		return
-	}
-
-	//fmt.Println(messages)
-
 	esClient := NewESClient(esURL, esIndex)
-	esClient.EnsureIndexExists()
+	err := esClient.EnsureIndexExists()
+	if err != nil {
+		log.Println("Error", err)
+		return
+	}
 
-	esClient.Put(messages[0])
+	for i := 0; i < nMessages; i++ {
+		sqsMessages, err := sqsClient.Read()
+		if err != nil {
+			log.Println("Error", err)
+			return
+		}
+
+		for _, sqsMessage := range sqsMessages {
+			err = esClient.Put(sqsMessage)
+			if err != nil {
+				log.Println("Error", err)
+				return
+			}
+		}
+	}
+
+	log.Println("Done")
 }

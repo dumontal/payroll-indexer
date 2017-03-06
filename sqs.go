@@ -69,6 +69,15 @@ func (c *SQSClient) Read() ([]SQSMessage, error) {
 			return messages, err
 		}
 
+		_, err = c.svc.DeleteMessage(&sqs.DeleteMessageInput{
+			QueueUrl:      &c.qURL,
+			ReceiptHandle: sqsMessage.ReceiptHandle,
+		})
+
+		if err != nil {
+			return messages, err
+		}
+
 		messages = append(messages, message)
 	}
 
