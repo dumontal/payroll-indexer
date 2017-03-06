@@ -1,5 +1,9 @@
 package main
 
+/*
+  Amazon SQS package
+*/
+
 import (
 	"encoding/json"
 
