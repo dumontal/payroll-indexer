@@ -22,7 +22,8 @@ func main() {
 	}
 
 	for i := 0; i < nMessages; i++ {
-		sqsMessages, err := sqsClient.Read()
+		var sqsMessages []SQSMessage
+		sqsMessages, err = sqsClient.Read()
 		if err != nil {
 			log.Println("Error", err)
 			return
@@ -35,6 +36,12 @@ func main() {
 				return
 			}
 		}
+	}
+
+	err = esClient.Flush()
+	if err != nil {
+		log.Println("Error", err)
+		return
 	}
 
 	log.Println("Done")

@@ -88,6 +88,12 @@ func (es *ESClient) Put(fromSQS SQSMessage) error {
 	return nil
 }
 
+// Flush well, flushes changes to disk.
+func (es *ESClient) Flush() error {
+	_, err := es.client.Flush().Index(es.index).Do(es.ctx)
+	return err
+}
+
 // esID builds the elastic search ID based on provided args.
 func esID(company, employee string, month int) string {
 	return fmt.Sprintf("%s%s%d", company, employee, month)
