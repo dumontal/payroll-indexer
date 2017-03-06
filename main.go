@@ -1,44 +1,30 @@
 package main
 
-import (
-	"context"
-	"fmt"
+import "fmt"
 
-	elastic "gopkg.in/olivere/elastic.v5"
-
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/session"
-	"github.com/aws/aws-sdk-go/service/ec2"
+const (
+	sqsURL    string = "https://sqs.eu-west-1.amazonaws.com/560569522348/payrolls"
+	awsRegion string = "eu-west-1"
 )
 
-func helloAWS() {
-	sess, err := session.NewSession()
+func main() {
+	sqsClient := NewSQSClient(sqsURL, awsRegion)
+	message, err := sqsClient.Read()
 	if err != nil {
-		panic(err)
+		fmt.Println("Error", err)
+		return
 	}
 
-	// Create an EC2 service object in the "us-west-2" region
-	// Note that you can also configure your region globally by
-	// exporting the AWS_REGION environment variable
-	svc := ec2.New(sess, &aws.Config{Region: aws.String("us-west-2")})
-
-	// Call the DescribeInstances Operation
-	resp, err := svc.DescribeInstances(nil)
-	if err != nil {
-		panic(err)
+	if message == nil {
+		fmt.Println("Received no messages")
+		return
 	}
 
-	// resp has all of the response data, pull out instance IDs:
-	fmt.Println("> Number of reservation sets: ", len(resp.Reservations))
-	for idx, res := range resp.Reservations {
-		fmt.Println("  > Number of instances: ", len(res.Instances))
-		for _, inst := range resp.Reservations[idx].Instances {
-			fmt.Println("    - Instance ID: ", *inst.InstanceId)
-		}
-	}
+	fmt.Println(message)
 }
 
-func main() {
+/*
+func pingES() {
 	// Starting with elastic.v5, you must pass a context to execute each service
 	ctx := context.Background()
 
@@ -60,3 +46,4 @@ func main() {
 
 	fmt.Printf("Elasticsearch returned with code %d and version %s\n", code, info.Version.Number)
 }
+*/
