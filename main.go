@@ -9,18 +9,18 @@ const (
 
 func main() {
 	sqsClient := NewSQSClient(sqsURL, awsRegion)
-	message, err := sqsClient.Read()
+	messages, err := sqsClient.Read()
 	if err != nil {
 		fmt.Println("Error", err)
 		return
 	}
 
-	if message == nil {
+	if len(messages) == 0 {
 		fmt.Println("Received no messages")
 		return
 	}
 
-	fmt.Println(message)
+	fmt.Println(messages)
 }
 
 /*

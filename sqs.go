@@ -38,8 +38,8 @@ func NewSQSClient(qURL, region string) *SQSClient {
 }
 
 // Read reads a new message from the SQS queue.
-// Returns nil if there is no message to read (empty SQS for instance).
-func (c *SQSClient) Read() (*SQSMessage, error) {
+// Returns an array of read messages.
+func (c *SQSClient) Read() ([]SQSMessage, error) {
 	result, err := c.svc.ReceiveMessage(&sqs.ReceiveMessageInput{
 		AttributeNames: []*string{
 			aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
@@ -57,16 +57,16 @@ func (c *SQSClient) Read() (*SQSMessage, error) {
 		return nil, err
 	}
 
-	if len(result.Messages) == 0 {
-		return nil, nil
+	var messages []SQSMessage
+	for _, sqsMessage := range result.Messages {
+		var message SQSMessage
+		err = json.Unmarshal([]byte(*(sqsMessage.Body)), &message)
+		if err != nil {
+			return messages, err
+		}
+
+		messages = append(messages, message)
 	}
 
-	var message SQSMessage
-	toDecode := *(result.Messages[0].Body)
-	err = json.Unmarshal([]byte(toDecode), &message)
-	if err != nil {
-		return nil, err
-	}
-
-	return &message, nil
+	return messages, nil
 }
