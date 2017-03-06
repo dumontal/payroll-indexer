@@ -27,4 +27,6 @@ func main() {
 
 	esClient := NewESClient(esURL, esIndex)
 	esClient.EnsureIndexExists()
+
+	esClient.Put(messages[0])
 }

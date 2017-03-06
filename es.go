@@ -1,5 +1,9 @@
 package main
 
+/*
+  ElasticSearch package
+*/
+
 import (
 	"context"
 	"fmt"
@@ -7,10 +11,6 @@ import (
 
 	elastic "gopkg.in/olivere/elastic.v5"
 )
-
-/*
-  ElasticSearch package
-*/
 
 // ESClient is an ElasticSearch client.
 // Starting with elastic.v5, you must pass a context to execute each service
@@ -44,6 +44,7 @@ func NewESClient(url, index string) *ESClient {
 	}
 }
 
+// EnsureIndexExists creates the main index if it does not exist.
 func (es *ESClient) EnsureIndexExists() error {
 	exists, err := es.client.IndexExists(es.index).Do(es.ctx)
 	if err != nil {
@@ -59,8 +60,35 @@ func (es *ESClient) EnsureIndexExists() error {
 		if !createIndex.Acknowledged {
 			// Not acknowledged
 		}
-		fmt.Println(createIndex)
 	}
 
 	return nil
+}
+
+// Put upserts the SQS message into ElasticSearch's own index.
+func (es *ESClient) Put(fromSQS SQSMessage) error {
+	docID := esID(fromSQS.CompanyID, fromSQS.EmployeeID, fromSQS.AbsMonth)
+	log.Printf("Indexing payroll with id '%s'\n", docID)
+
+	response, err := es.client.Index().
+		Index(es.index).
+		Type("payroll").
+		Id(docID).
+		BodyJson(fromSQS.Content).
+		Do(es.ctx)
+
+	if err != nil {
+		return err
+	}
+
+	if !response.Created {
+		log.Printf("[WARN] payroll with id '%s' has not been created\n", docID)
+	}
+
+	return nil
+}
+
+// esID builds the elastic search ID based on provided args.
+func esID(company, employee string, month int) string {
+	return fmt.Sprintf("%s%s%d", company, employee, month)
 }
